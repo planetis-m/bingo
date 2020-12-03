@@ -19,9 +19,9 @@ type
 let d = Foo(value: 1, next: Foo(value: 2, next: nil))
 let s = newStringStream()
 # Make a roundtrip
-s.storeBin(d) # writes JSON from a location
+s.storeBin(d) # writes binary from a location
 s.setPosition(0)
-let a = s.binTo(Foo) # reads JSON and transform to a type
+let a = s.binTo(Foo) # reads binary and transform to a type
 # Alternatively load directly into a location
 s.setPosition(0)
 var b: Foo
