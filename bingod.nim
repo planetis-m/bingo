@@ -2,8 +2,6 @@ import macros, streams, options, tables, sets
 from typetraits import supportsCopyMem
 
 # serialization
-proc storeNil*(s: Stream) =
-  write(s, true)
 proc storeBin*(s: Stream; x: bool) =
   write(s, x)
 proc storeBin*(s: Stream; x: char) =
@@ -45,16 +43,16 @@ proc storeBin*[K, V](s: Stream; o: (Table[K, V]|OrderedTable[K, V])) =
     storeBin(s, v)
 
 proc storeBin*(s: Stream; o: ref object) =
-  if o.isNil:
-    storeNil(s)
-  else:
+  let isSome = o != nil
+  storeBin(s, isSome)
+  if isSome:
     storeBin(s, o[])
 
 proc storeBin*[T](s: Stream; o: Option[T]) =
-  if isSome(o):
+  let isSome = isSome(o)
+  storeBin(s, isSome)
+  if isSome:
     storeBin(s, get(o))
-  else:
-    storeNil(s)
 
 proc storeBin*[T: object|tuple](s: Stream; o: T) =
   when not supportsCopyMem(T):
@@ -114,16 +112,16 @@ proc initFromBin*[K, V](dst: var (Table[K, V]|OrderedTable[K, V]); s: Stream) =
     initFromBin(mgetOrPut(dst, key, default(V)), s)
 
 proc initFromBin*[T](dst: var ref T; s: Stream) =
-  let isNil = readBool(s)
-  if isNil:
-    dst = nil
-  else:
+  let isSome = readBool(s)
+  if isSome:
     new(dst)
     initFromBin(dst[], s)
+  else:
+    dst = nil
 
 proc initFromBin*[T](dst: var Option[T]; s: Stream) =
-  let isNil = readBool(s)
-  if not isNil:
+  let isSome = readBool(s)
+  if isSome:
     var tmp: T
     initFromBin(tmp, s)
     dst = some(tmp)

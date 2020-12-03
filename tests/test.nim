@@ -1,4 +1,4 @@
-import ../bingod, std/[streams, enumerate, math]
+import ../bingod, std/[streams, math]
 
 type
   Foo = ref object
@@ -138,6 +138,15 @@ block:
   let a = s.binTo(FooBaz)
   assert a == data
 block:
+  let data = Foo(value: 1, next: Foo(value: 2, next: nil))
+  let s = newStringStream()
+  s.storeBin(data)
+  s.setPosition(0)
+  let a = s.binTo(Foo)
+  assert a.value == 1
+  let b = a.next
+  assert b.value == 2
+block:
   let data = FooBar(four: "hello", three: 1.0)
   let s = newStringStream()
   s.storeBin(data)
@@ -165,15 +174,6 @@ block:
   let a = s.binTo(ContentNode)
   assert $a == $data
 block:
-  let data = Foo(value: 1, next: Foo(value: 2, next: nil))
-  let s = newStringStream()
-  s.storeBin(data)
-  s.setPosition(0)
-  let a = s.binTo(Foo)
-  assert a.value == 1
-  let b = a.next
-  assert b.value == 2
-block:
   let data = @[
     IrisPlant(sepalLength: 5.1, sepalWidth: 3.5, petalLength: 1.4,
               petalWidth: 0.2, species: "setosa"),
@@ -182,23 +182,19 @@ block:
   let s = newStringStream()
   s.storeBin(data)
   s.setPosition(0)
-  for (i, x) in enumerate(binItems(s, IrisPlant)):
-    if i == 0:
-      assert x.species == "setosa"
-      assert almostEqual(x.sepalWidth, 3.5'f32)
-    else:
-      assert almostEqual(x.sepalWidth, 3'f32)
+  let a = s.binTo(seq[IrisPlant])
+  assert a[0].species == "setosa"
+  assert almostEqual(a[0].sepalWidth, 3.5'f32)
+  assert almostEqual(a[1].sepalWidth, 3'f32)
 block:
   let data = [
     Responder(name: "John Smith", gender: male, occupation: "student", age: 18,
       siblings: @[Sibling(sex: female, birth_year: 1991, relation: biological, alive: true),
                   Sibling(sex: male, birth_year: 1989, relation: step, alive: true)])]
-  var responders: seq[Responder]
   let s = newStringStream()
   s.storeBin(data)
   s.setPosition(0)
-  for x in binItems(s, Responder):
-    responders.add x
-  assert responders.len == 1
-  assert responders[0].gender == male
-  assert responders[0].siblings.len == 2
+  var a: array[1, Responder]
+  s.loadBin(a)
+  assert a[0].gender == male
+  assert a[0].siblings.len == 2
