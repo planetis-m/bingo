@@ -217,21 +217,3 @@ proc binTo*[T](s: Stream, t: typedesc[T]): T =
 proc loadBin*[T](s: Stream, dst: var T) =
   ## Unmarshals the specified Stream into the location specified.
   initFromBin(dst, s)
-
-template whileBinItems(s, x, xType, body: untyped) =
-  let len = s.readInt64()
-  for i in 0 ..< len:
-    var x: xType
-    initFromBin(x, s)
-    body
-
-macro binItems*(x: ForLoopStmt): untyped =
-  ## Unmarshals an array into the type specified, one items at a time.
-  expectLen(x, 3)
-  let iterVar = x[0]
-  expectLen(x[1], 3)
-  let
-    iterType = x[1][2]
-    strmVar = x[1][1]
-    body = x[^1]
-  result = newBlockStmt(getAst(whileBinItems(strmVar, iterVar, iterType, body)))

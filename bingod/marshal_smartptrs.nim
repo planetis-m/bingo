@@ -1,4 +1,4 @@
-import ../bintown, fusion/smartptrs, std/streams
+import ../bingod, fusion/smartptrs, std/streams
 
 proc storeBin*[T](s: Stream; o: UniquePtr[T]) =
   if o.isNil:

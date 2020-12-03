@@ -1,4 +1,4 @@
-import ../bintown, std/[streams, enumerate, math]
+import ../bingod, std/[streams, enumerate, math]
 
 type
   Foo = ref object
