@@ -29,7 +29,8 @@ proc storeBin*[T](s: Stream; x: seq[T]) =
     for elem in x.items:
       storeBin(s, elem)
   else:
-    writeData(s, x[0].unsafeAddr, x.len * sizeof(T))
+    if x.len > 0:
+      writeData(s, x[0].unsafeAddr, x.len * sizeof(T))
 
 proc storeBin*[T](s: Stream; o: SomeSet[T]) =
   write(s, int64(o.len))
@@ -86,8 +87,9 @@ proc initFromBin*[T](dst: var seq[T]; s: Stream) =
       initFromBin(dst[i], s)
   else:
     let bLen = int(len) * sizeof(T)
-    if readData(s, dst[0].addr, bLen) != bLen:
-      raise newException(IOError, "cannot read from stream")
+    if len > 0:
+      if readData(s, dst[0].addr, bLen) != bLen:
+        raise newException(IOError, "cannot read from stream")
 
 proc initFromBin*[S, T](dst: var array[S, T]; s: Stream) =
   when not supportsCopyMem(T):
