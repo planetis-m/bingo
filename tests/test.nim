@@ -1,4 +1,4 @@
-import ../bingod, std/[streams, math]
+import bingod, std/[streams, math]
 
 type
   Foo = ref object
