@@ -17,20 +17,20 @@ proc storeBin*(s: Stream; x: string) =
   writeData(s, cstring(x), x.len)
 
 proc storeBin*[S, T](s: Stream; x: array[S, T]) =
-  when not supportsCopyMem(T):
+  when supportsCopyMem(T):
+    writeData(s, x.unsafeAddr, sizeof(x))
+  else:
     for elem in x.items:
       storeBin(s, elem)
-  else:
-    writeData(s, x.unsafeAddr, sizeof(x))
 
 proc storeBin*[T](s: Stream; x: seq[T]) =
   write(s, int64(x.len))
-  when not supportsCopyMem(T):
-    for elem in x.items:
-      storeBin(s, elem)
-  else:
+  when supportsCopyMem(T):
     if x.len > 0:
       writeData(s, x[0].unsafeAddr, x.len * sizeof(T))
+  else:
+    for elem in x.items:
+      storeBin(s, elem)
 
 proc storeBin*[T](s: Stream; o: SomeSet[T]) =
   write(s, int64(o.len))
@@ -56,10 +56,11 @@ proc storeBin*[T](s: Stream; o: Option[T]) =
     storeBin(s, get(o))
 
 proc storeBin*[T: object|tuple](s: Stream; o: T) =
-  when not supportsCopyMem(T):
+  when supportsCopyMem(T):
+    write(s, o)
+  else:
     for v in o.fields:
       storeBin(s, v)
-  else: write(s, o)
 
 # deserialization
 proc initFromBin*(dst: var bool; s: Stream) =
@@ -82,22 +83,22 @@ proc initFromBin*(dst: var string; s: Stream) =
 proc initFromBin*[T](dst: var seq[T]; s: Stream) =
   let len = s.readInt64()
   dst.setLen(len)
-  when not supportsCopyMem(T):
-    for i in 0 ..< len(dst):
-      initFromBin(dst[i], s)
-  else:
-    let bLen = int(len) * sizeof(T)
+  when supportsCopyMem(T):
     if len > 0:
+      let bLen = int(len) * sizeof(T)
       if readData(s, dst[0].addr, bLen) != bLen:
         raise newException(IOError, "cannot read from stream")
+  else:
+    for i in 0 ..< len(dst):
+      initFromBin(dst[i], s)
 
 proc initFromBin*[S, T](dst: var array[S, T]; s: Stream) =
-  when not supportsCopyMem(T):
-    for i in low(dst) .. high(dst):
-      initFromBin(dst[i], s)
-  else:
+  when supportsCopyMem(T):
     if readData(s, dst.addr, sizeof(dst)) != sizeof(dst):
       raise newException(IOError, "cannot read from stream")
+  else:
+    for i in low(dst) .. high(dst):
+      initFromBin(dst[i], s)
 
 proc initFromBin*[T](dst: var SomeSet[T]; s: Stream) =
   let len = s.readInt64()
@@ -130,10 +131,11 @@ proc initFromBin*[T](dst: var Option[T]; s: Stream) =
   else: none[T]()
 
 proc initFromBin*[T: tuple](dst: var T; s: Stream) =
-  when not supportsCopyMem(T):
+  when supportsCopyMem(T):
+    read(s, dst)
+  else:
     for v in dst.fields:
       initFromBin(v, s)
-  else: read(s, dst)
 
 template getFieldValue(stream, tmpSym, fieldSym) =
   initFromBin(tmpSym.fieldSym, stream)
@@ -200,9 +202,10 @@ macro assignObjectImpl(dst: typed; s: Stream): untyped =
   if x.kind != nnkNone: result.add x
 
 proc initFromBin*[T: object](dst: var T; s: Stream) =
-  when not supportsCopyMem(T):
+  when supportsCopyMem(T):
+    read(s, dst)
+  else:
     assignObjectImpl(dst, s)
-  else: read(s, dst)
 
 proc binTo*[T](s: Stream, t: typedesc[T]): T =
   ## Unmarshals the specified Stream into the type specified.

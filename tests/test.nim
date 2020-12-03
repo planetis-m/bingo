@@ -65,6 +65,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(BarBaz)
   assert a == data
+  assert s.getPosition == s.data.len
 block:
   let data = NotApple
   let s = newStringStream()
@@ -72,6 +73,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(Stuff)
   assert a == data
+  assert s.getPosition == s.data.len
 block:
   let data: array[Fruit, int] = [0, 1, 2]
   let s = newStringStream()
@@ -79,6 +81,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(array[Fruit, int])
   assert a == data
+  assert s.getPosition == s.data.len
 block:
   let data = Empty()
   let s = newStringStream()
@@ -86,6 +89,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(Empty)
   assert a == data
+  assert s.getPosition == s.data.len
 block:
   let data = (x: 42)
   let s = newStringStream()
@@ -93,6 +97,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(tuple[x:int])
   assert(a[0] == 42)
+  assert s.getPosition == s.data.len
 block:
   var data: set[Fruit]
   data.incl Apple
@@ -102,6 +107,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(set[Fruit])
   assert(a == data)
+  assert s.getPosition == s.data.len
 block:
   let data = "hello world"
   let s = newStringStream()
@@ -109,6 +115,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(string)
   assert a == data
+  assert s.getPosition == s.data.len
 block:
   let data = @[1, 2, 3, 4, 5, 6]
   let s = newStringStream()
@@ -116,6 +123,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(seq[int])
   assert a == data
+  assert s.getPosition == s.data.len
 block:
   let data = @["one", "two", "three"]
   let s = newStringStream()
@@ -123,6 +131,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(seq[string])
   assert a == data
+  assert s.getPosition == s.data.len
 block:
   let data = @[("3",), ("4",), ("5",)]
   let s = newStringStream()
@@ -130,6 +139,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(seq[(string,)])
   assert a == data
+  assert s.getPosition == s.data.len
 block:
   let data = FooBaz(v: "hello", t: 5.0, x: (3,))
   let s = newStringStream()
@@ -137,6 +147,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(FooBaz)
   assert a == data
+  assert s.getPosition == s.data.len
 block:
   let data = Foo(value: 1, next: Foo(value: 2, next: nil))
   let s = newStringStream()
@@ -146,6 +157,7 @@ block:
   assert a.value == 1
   let b = a.next
   assert b.value == 2
+  assert s.getPosition == s.data.len
 block:
   let data = FooBar(four: "hello", three: 1.0)
   let s = newStringStream()
@@ -155,6 +167,7 @@ block:
   doAssert a.four == "hello"
   assert a.three == 1.0
   assert a.one == 0
+  assert s.getPosition == s.data.len
 block:
   let data = Bar(kind: Apple, apple: "world")
   let s = newStringStream()
@@ -163,6 +176,7 @@ block:
   let a = s.binTo(Bar)
   assert a.kind == Apple
   assert a.apple == "world"
+  assert s.getPosition == s.data.len
 block:
   let data = ContentNode(kind: P, pChildren: @[
     ContentNode(kind: Text, textStr: "mychild"),
@@ -173,6 +187,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(ContentNode)
   assert $a == $data
+  assert s.getPosition == s.data.len
 block:
   let data = @[
     IrisPlant(sepalLength: 5.1, sepalWidth: 3.5, petalLength: 1.4,
@@ -186,6 +201,7 @@ block:
   assert a[0].species == "setosa"
   assert almostEqual(a[0].sepalWidth, 3.5'f32)
   assert almostEqual(a[1].sepalWidth, 3'f32)
+  assert s.getPosition == s.data.len
 block:
   let data = [
     Responder(name: "John Smith", gender: male, occupation: "student", age: 18,
@@ -198,3 +214,4 @@ block:
   s.loadBin(a)
   assert a[0].gender == male
   assert a[0].siblings.len == 2
+  assert s.getPosition == s.data.len
