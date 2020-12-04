@@ -2,65 +2,69 @@ import macros, streams, options, tables, sets
 from typetraits import supportsCopyMem
 
 # serialization
-proc storeBin*(s: Stream; x: bool) =
+proc storeToBin*(s: Stream; x: bool) =
   write(s, x)
-proc storeBin*(s: Stream; x: char) =
+proc storeToBin*(s: Stream; x: char) =
   write(s, x)
-proc storeBin*[T: SomeNumber](s: Stream; x: T) =
+proc storeToBin*[T: SomeNumber](s: Stream; x: T) =
   write(s, x)
-proc storeBin*[T: enum](s: Stream; x: T) =
+proc storeToBin*[T: enum](s: Stream; x: T) =
   write(s, x)
-proc storeBin*[T](s: Stream; x: set[T]) =
+proc storeToBin*[T](s: Stream; x: set[T]) =
   write(s, x)
-proc storeBin*(s: Stream; x: string) =
+proc storeToBin*(s: Stream; x: string) =
   write(s, int64(x.len))
   writeData(s, cstring(x), x.len)
 
-proc storeBin*[S, T](s: Stream; x: array[S, T]) =
+proc storeToBin*[S, T](s: Stream; x: array[S, T]) =
   when supportsCopyMem(T):
     writeData(s, x.unsafeAddr, sizeof(x))
   else:
     for elem in x.items:
-      storeBin(s, elem)
+      storeToBin(s, elem)
 
-proc storeBin*[T](s: Stream; x: seq[T]) =
+proc storeToBin*[T](s: Stream; x: seq[T]) =
   write(s, int64(x.len))
   when supportsCopyMem(T):
     if x.len > 0:
       writeData(s, x[0].unsafeAddr, x.len * sizeof(T))
   else:
     for elem in x.items:
-      storeBin(s, elem)
+      storeToBin(s, elem)
 
-proc storeBin*[T](s: Stream; o: SomeSet[T]) =
+proc storeToBin*[T](s: Stream; o: SomeSet[T]) =
   write(s, int64(o.len))
   for elem in o.items:
-    storeBin(s, elem)
+    storeToBin(s, elem)
 
-proc storeBin*[K, V](s: Stream; o: (Table[K, V]|OrderedTable[K, V])) =
+proc storeToBin*[K, V](s: Stream; o: (Table[K, V]|OrderedTable[K, V])) =
   write(s, int64(o.len))
   for k, v in o.pairs:
-    storeBin(s, k)
-    storeBin(s, v)
+    storeToBin(s, k)
+    storeToBin(s, v)
 
-proc storeBin*(s: Stream; o: ref object) =
+proc storeToBin*[T](s: Stream; o: ref T) =
   let isSome = o != nil
-  storeBin(s, isSome)
+  storeToBin(s, isSome)
   if isSome:
-    storeBin(s, o[])
+    storeToBin(s, o[])
 
-proc storeBin*[T](s: Stream; o: Option[T]) =
+proc storeToBin*[T](s: Stream; o: Option[T]) =
   let isSome = isSome(o)
-  storeBin(s, isSome)
+  storeToBin(s, isSome)
   if isSome:
-    storeBin(s, get(o))
+    storeToBin(s, get(o))
 
-proc storeBin*[T: object|tuple](s: Stream; o: T) =
+proc storeToBin*[T: object|tuple](s: Stream; o: T) =
   when supportsCopyMem(T):
     write(s, o)
   else:
     for v in o.fields:
-      storeBin(s, v)
+      storeToBin(s, v)
+
+proc storeBin*[T](s: Stream; o: T) =
+  ## Marshals the specified location into Stream `s`.
+  storeToBin(s, o)
 
 # deserialization
 proc initFromBin*(dst: var bool; s: Stream) =
@@ -75,21 +79,21 @@ proc initFromBin*[T](dst: var set[T]; s: Stream) =
   read(s, dst)
 
 proc initFromBin*(dst: var string; s: Stream) =
-  let len = s.readInt64()
-  dst.setLen(int(len))
-  if readData(s, cstring(dst), int(len)) != len:
+  let len = s.readInt64().int
+  dst.setLen(len)
+  if readData(s, cstring(dst), len) != len:
     raise newException(IOError, "cannot read from stream")
 
 proc initFromBin*[T](dst: var seq[T]; s: Stream) =
-  let len = s.readInt64()
+  let len = s.readInt64().int
   dst.setLen(len)
   when supportsCopyMem(T):
     if len > 0:
-      let bLen = int(len) * sizeof(T)
+      let bLen = len * sizeof(T)
       if readData(s, dst[0].addr, bLen) != bLen:
         raise newException(IOError, "cannot read from stream")
   else:
-    for i in 0 ..< len(dst):
+    for i in 0 ..< len:
       initFromBin(dst[i], s)
 
 proc initFromBin*[S, T](dst: var array[S, T]; s: Stream) =
@@ -101,14 +105,14 @@ proc initFromBin*[S, T](dst: var array[S, T]; s: Stream) =
       initFromBin(dst[i], s)
 
 proc initFromBin*[T](dst: var SomeSet[T]; s: Stream) =
-  let len = s.readInt64()
+  let len = s.readInt64().int
   for i in 0 ..< len:
     var tmp: T
     initFromBin(tmp, s)
     dst.incl(tmp)
 
 proc initFromBin*[K, V](dst: var (Table[K, V]|OrderedTable[K, V]); s: Stream) =
-  let len = s.readInt64()
+  let len = s.readInt64().int
   for i in 0 ..< len:
     var key: K
     initFromBin(key, s)
@@ -128,7 +132,8 @@ proc initFromBin*[T](dst: var Option[T]; s: Stream) =
     var tmp: T
     initFromBin(tmp, s)
     dst = some(tmp)
-  else: none[T]()
+  else:
+    dst = none[T]()
 
 proc initFromBin*[T: tuple](dst: var T; s: Stream) =
   when supportsCopyMem(T):

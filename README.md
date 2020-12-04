@@ -2,7 +2,7 @@
 ## About
 This package provides the ``binTo``, ``loadBin`` procs which deserialize the specified
 type from a ``Stream``. The `storeBin` procs are used to write the binary
-representation of a location into a `Stream`. Low level `initFromBin` and `storeBin`
+representation of a location into a `Stream`. Low level `initFromBin` and `storeToBin`
 procs can be overloaded, in order to support arbitary container types, i.e.
 [marshal_smartptrs.nim](bingod/marshal_smartptrs.nim).
 
