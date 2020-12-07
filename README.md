@@ -1,15 +1,15 @@
-# BinGod — Binary serialization framework for Nim
+# bingo — Binary serialization framework for Nim
 ## About
 This package provides the ``binTo``, ``loadBin`` procs which deserialize the specified
 type from a ``Stream``. The `storeBin` procs are used to write the binary
 representation of a location into a `Stream`. Low level `initFromBin` and `storeToBin`
 procs can be overloaded, in order to support arbitary container types, i.e.
-[marshal_smartptrs.nim](bingod/marshal_smartptrs.nim).
+[marshal_smartptrs.nim](bingo/marshal_smartptrs.nim).
 
 ## Usage
 
 ```nim
-import std/streams, bingod
+import std/streams, bingo
 
 type
   Foo = ref object
@@ -43,7 +43,7 @@ s.loadBin(b)
 
   ```nim
   from typetraits import distinctBase
-  proc storeBin*[T: distinct](s: Stream; x: T) = storeBin(s, x.distinctBase)
+  proc storeToBin*[T: distinct](s: Stream; x: T) = storeToBin(s, x.distinctBase)
   proc initFromBin[T: distinct](dst: var T; s: Stream) = initFromBin(dst.distinctBase, p)
   ```
 - Custom pragmas are not supported. Unless `hasCustomPragma` improves, this feature won't be added.

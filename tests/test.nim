@@ -1,4 +1,4 @@
-import bingod, std/[streams, math, options, sets, tables]
+import bingo, std/[streams, math, options, sets, tables]
 
 type
   Foo = ref object
@@ -54,7 +54,7 @@ type
     siblings: seq[Sibling]
   Sibling = object
     sex: Gender
-    birth_year: int
+    birthYear: int
     relation: Relation
     alive: bool
 
@@ -64,7 +64,7 @@ block:
   s.storeBin(data)
   assert s.data.len == sizeof(data)
   s.setPosition(0)
-  let a = s.binTo(BarBaz)
+  let a = s.binTo(typeof data)
   assert a == data
   assert s.getPosition == s.data.len
 block:
@@ -73,7 +73,7 @@ block:
   s.storeBin(data)
   assert s.data.len == sizeof(data)
   s.setPosition(0)
-  let a = s.binTo(Stuff)
+  let a = s.binTo(typeof data)
   assert a == data
   assert s.getPosition == s.data.len
 block:
@@ -82,7 +82,7 @@ block:
   s.storeBin(data)
   assert s.data.len == sizeof(data)
   s.setPosition(0)
-  let a = s.binTo(array[Fruit, int])
+  let a = s.binTo(typeof data)
   assert a == data
   assert s.getPosition == s.data.len
 block:
@@ -91,7 +91,7 @@ block:
   s.storeBin(data)
   assert s.data.len == sizeof(data)
   s.setPosition(0)
-  let a = s.binTo(Empty)
+  let a = s.binTo(typeof data)
   assert a == data
   assert s.getPosition == s.data.len
 block:
@@ -100,19 +100,17 @@ block:
   s.storeBin(data)
   assert s.data.len == sizeof(data)
   s.setPosition(0)
-  let a = s.binTo(tuple[x:int])
-  assert(a[0] == 42)
+  let a = s.binTo(typeof data)
+  assert a == data
   assert s.getPosition == s.data.len
 block:
-  var data: set[Fruit]
-  data.incl Apple
-  data.incl Orange
+  let data = {Apple, Orange}
   let s = newStringStream()
   s.storeBin(data)
   assert s.data.len == sizeof(data)
   s.setPosition(0)
-  let a = s.binTo(set[Fruit])
-  assert(a == data)
+  let a = s.binTo(typeof data)
+  assert a == data
   assert s.getPosition == s.data.len
 block:
   let data = "hello world"
@@ -122,7 +120,7 @@ block:
   s.setPosition(0)
   assert data.len == s.readInt64
   s.setPosition(0)
-  let a = s.binTo(string)
+  let a = s.binTo(typeof data)
   assert a == data
   assert s.getPosition == s.data.len
 block:
@@ -133,7 +131,7 @@ block:
   s.setPosition(0)
   assert data.len == s.readInt64
   s.setPosition(0)
-  let a = s.binTo(seq[int])
+  let a = s.binTo(typeof data)
   assert a == data
   assert s.getPosition == s.data.len
 block:
@@ -144,7 +142,7 @@ block:
   assert data.len == s.readInt64
   assert data[0].len == s.readInt64
   s.setPosition(0)
-  let a = s.binTo(seq[string])
+  let a = s.binTo(typeof data)
   assert a == data
   assert s.getPosition == s.data.len
 block:
@@ -152,7 +150,7 @@ block:
   let s = newStringStream()
   s.storeBin(data)
   s.setPosition(0)
-  let a = s.binTo(seq[(string,)])
+  let a = s.binTo(typeof data)
   assert a == data
   assert s.getPosition == s.data.len
 block:
@@ -161,7 +159,7 @@ block:
   s.storeBin(data)
   assert s.data.len == sizeof(float)+sizeof(int)+len(data.v)+sizeof((int32,))
   s.setPosition(0)
-  let a = s.binTo(FooBaz)
+  let a = s.binTo(typeof data)
   assert a == data
   assert s.getPosition == s.data.len
 block:
@@ -170,7 +168,7 @@ block:
   s.storeBin(data)
   assert s.data.len == 3*sizeof(bool)+2*sizeof(int)
   s.setPosition(0)
-  let a = s.binTo(Foo)
+  let a = s.binTo(typeof data)
   assert a.value == 1
   let b = a.next
   assert b.value == 2
@@ -181,7 +179,7 @@ block:
   s.storeBin(data)
   assert s.data.len == sizeof(bool)+sizeof(float32)+sizeof(char)+2*sizeof(int)+len(data.four)
   s.setPosition(0)
-  let a = s.binTo(FooBar)
+  let a = s.binTo(typeof data)
   doAssert a.four == "hello"
   assert a.three == 1'f32
   assert a.one == 0
@@ -192,7 +190,7 @@ block:
   s.storeBin(data)
   assert s.data.len == 3*sizeof(bool)+sizeof(int)
   s.setPosition(0)
-  let a = s.binTo(Option[Foo])
+  let a = s.binTo(typeof data)
   assert a.get.value == 5
   assert s.getPosition == s.data.len
 block:
@@ -201,7 +199,7 @@ block:
   s.storeBin(data)
   assert s.data.len == sizeof(bool)+sizeof(Empty)
   s.setPosition(0)
-  let a = s.binTo(Option[Empty])
+  let a = s.binTo(typeof data)
   assert s.getPosition == s.data.len
 block:
   let data = toHashSet([5'f32, 3, 2])
@@ -211,8 +209,9 @@ block:
   s.setPosition(0)
   assert data.len == s.readInt64
   s.setPosition(0)
-  let a = s.binTo(HashSet[float32])
+  let a = s.binTo(typeof data)
   assert a == data
+  assert s.getPosition == s.data.len
 block:
   let data = {'a': 5'i32, 'b': 9'i32}.toTable
   let s = newStringStream()
@@ -221,15 +220,16 @@ block:
   s.setPosition(0)
   assert data.len == s.readInt64
   s.setPosition(0)
-  let a = s.binTo(Table[char, int32])
+  let a = s.binTo(typeof data)
   assert a == data
+  assert s.getPosition == s.data.len
 block:
   let data = Bar(kind: Apple, apple: "world")
   let s = newStringStream()
   s.storeBin(data)
   assert s.data.len == sizeof(bool)+sizeof(Fruit)+sizeof(int)+len(data.apple)
   s.setPosition(0)
-  let a = s.binTo(Bar)
+  let a = s.binTo(typeof data)
   assert a.kind == Apple
   assert a.apple == "world"
   assert s.getPosition == s.data.len
@@ -241,7 +241,7 @@ block:
   let s = newStringStream()
   s.storeBin(data)
   s.setPosition(0)
-  let a = s.binTo(ContentNode)
+  let a = s.binTo(typeof data)
   assert $a == $data
   assert s.getPosition == s.data.len
 block:
@@ -253,7 +253,7 @@ block:
   let s = newStringStream()
   s.storeBin(data)
   s.setPosition(0)
-  let a = s.binTo(seq[IrisPlant])
+  let a = s.binTo(typeof data)
   assert a[0].species == "setosa"
   assert almostEqual(a[0].sepalWidth, 3.5'f32)
   assert almostEqual(a[1].sepalWidth, 3'f32)
@@ -261,13 +261,19 @@ block:
 block:
   let data = [
     Responder(name: "John Smith", gender: male, occupation: "student", age: 18,
-      siblings: @[Sibling(sex: female, birth_year: 1991, relation: biological, alive: true),
-                  Sibling(sex: male, birth_year: 1989, relation: step, alive: true)])]
+      siblings: @[Sibling(sex: female, birthYear: 1991, relation: biological, alive: true),
+                  Sibling(sex: male, birthYear: 1989, relation: step, alive: true)])]
   let s = newStringStream()
   s.storeBin(data)
   s.setPosition(0)
-  var a: array[1, Responder]
+  var a: array[1, Responder] = data
+  a[0].name = "Janne Smith"
+  a[0].gender = female
+  a[0].siblings[0].birthYear = 1997
+  a[0].siblings.add Sibling()
   s.loadBin(a)
+  assert a[0].name == "John Smith"
   assert a[0].gender == male
   assert a[0].siblings.len == 2
+  assert a[0].siblings[0].birthYear == 1991
   assert s.getPosition == s.data.len
