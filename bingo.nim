@@ -2,69 +2,72 @@ import macros, streams, options, tables, sets
 from typetraits import supportsCopyMem
 
 # serialization
-proc storeToBin*(s: Stream; x: bool) =
+proc storeBin*(s: Stream; x: bool) =
   write(s, x)
-proc storeToBin*(s: Stream; x: char) =
+proc storeBin*(s: Stream; x: char) =
   write(s, x)
-proc storeToBin*[T: SomeNumber](s: Stream; x: T) =
+proc storeBin*[T: SomeNumber](s: Stream; x: T) =
   write(s, x)
-proc storeToBin*[T: enum](s: Stream; x: T) =
+proc storeBin*[T: enum](s: Stream; x: T) =
   write(s, x)
-proc storeToBin*[T](s: Stream; x: set[T]) =
+proc storeBin*[T](s: Stream; x: set[T]) =
   write(s, x)
-proc storeToBin*(s: Stream; x: string) =
+proc storeBin*(s: Stream; x: string) =
   write(s, int64(x.len))
   writeData(s, cstring(x), x.len)
 
-proc storeToBin*[S, T](s: Stream; x: array[S, T]) =
+proc storeBin*[S, T](s: Stream; x: array[S, T]) =
   when supportsCopyMem(T):
     writeData(s, x.unsafeAddr, sizeof(x))
   else:
     for elem in x.items:
-      storeToBin(s, elem)
+      storeBin(s, elem)
 
-proc storeToBin*[T](s: Stream; x: seq[T]) =
+proc storeBin*[T](s: Stream; x: seq[T]) =
   write(s, int64(x.len))
   when supportsCopyMem(T):
     if x.len > 0:
       writeData(s, x[0].unsafeAddr, x.len * sizeof(T))
   else:
     for elem in x.items:
-      storeToBin(s, elem)
+      storeBin(s, elem)
 
-proc storeToBin*[T](s: Stream; o: SomeSet[T]) =
+proc storeBin*[T](s: Stream; o: SomeSet[T]) =
   write(s, int64(o.len))
   for elem in o.items:
-    storeToBin(s, elem)
+    storeBin(s, elem)
 
-proc storeToBin*[K, V](s: Stream; o: (Table[K, V]|OrderedTable[K, V])) =
+proc storeBin*[K, V](s: Stream; o: (Table[K, V]|OrderedTable[K, V])) =
   write(s, int64(o.len))
   for k, v in o.pairs:
-    storeToBin(s, k)
-    storeToBin(s, v)
+    storeBin(s, k)
+    storeBin(s, v)
 
-proc storeToBin*[T](s: Stream; o: ref T) =
+proc storeBin*[T](s: Stream; o: ref T) =
   let isSome = o != nil
-  storeToBin(s, isSome)
+  storeBin(s, isSome)
   if isSome:
-    storeToBin(s, o[])
+    storeBin(s, o[])
 
-proc storeToBin*[T](s: Stream; o: Option[T]) =
+proc storeBin*[T](s: Stream; o: Option[T]) =
   let isSome = isSome(o)
-  storeToBin(s, isSome)
+  storeBin(s, isSome)
   if isSome:
-    storeToBin(s, get(o))
+    storeBin(s, get(o))
 
-proc storeToBin*[T: object|tuple](s: Stream; o: T) =
+proc storeBin*[T: tuple](s: Stream; o: T) =
   when supportsCopyMem(T):
     write(s, o)
   else:
     for v in o.fields:
-      storeToBin(s, v)
+      storeBin(s, v)
 
-proc storeBin*[T](s: Stream; o: T) =
-  ## Marshals the specified location into Stream `s`.
-  storeToBin(s, o)
+proc storeBin*[T: object](s: Stream; o: T) =
+  when supportsCopyMem(T):
+    write(s, o)
+  else:
+    for v in o.fields:
+      storeBin(s, v)
 
 # deserialization
 proc initFromBin*(dst: var bool; s: Stream) =
