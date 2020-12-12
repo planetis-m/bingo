@@ -20,16 +20,16 @@ type
     relation: Relation
     alive: bool
 
-proc sha1Bin(s: Stream): Sha1Digest =
+proc toSha1(s: Stream): Sha1Digest =
   const BufferLength = 8192
   var state = newSha1State()
   var buffer = newString(BufferLength)
   while true:
-    let len = readData(s, cstring(buffer), BufferLength)
-    if len == 0:
+    let length = readData(s, cstring(buffer), BufferLength)
+    if length == 0:
       break
     state.update(buffer)
-    if len != BufferLength:
+    if length != BufferLength:
       break
   result = state.finalize()
 
@@ -44,11 +44,12 @@ proc save(x: Responder) =
       storeBin(fs, x)
       # Compute hash
       fs.setPosition(sizeof(Sha1Digest))
-      hash = sha1Bin(fs)
+      hash = toSha1(fs)
       # Overwrite placeholder
       fs.setPosition(0)
       write(fs, hash)
-    finally: fs.close()
+    finally:
+      fs.close()
 
 proc load(x: var Responder) =
   let fs = newFileStream(savefile)
@@ -58,12 +59,13 @@ proc load(x: var Responder) =
       var expected: Sha1Digest
       read(fs, expected)
       # Check with computed hash
-      let hash = sha1Bin(fs)
+      let hash = toSha1(fs)
       doAssert expected == hash
       # Deserialize
       fs.setPosition(sizeof(Sha1Digest))
       loadBin(fs, x)
-    finally: fs.close()
+    finally:
+      fs.close()
 
 proc main =
   let data =
