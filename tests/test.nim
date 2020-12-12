@@ -1,4 +1,4 @@
-import bingo, std/[streams, math, options, sets, tables]
+import bingo, std/[streams, math, options, sets, tables, hashes]
 
 type
   Foo = ref object
@@ -66,6 +66,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a == data
+  assert hash(data) == hash(a)
   assert s.getPosition == s.data.len
 block:
   let data = NotApple
@@ -75,6 +76,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a == data
+  assert hash(data) == hash(a)
   assert s.getPosition == s.data.len
 block:
   let data: array[Fruit, int] = [0, 1, 2]
@@ -84,6 +86,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a == data
+  assert hash(data) == hash(a)
   assert s.getPosition == s.data.len
 block:
   let data = Empty()
@@ -102,6 +105,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a == data
+  assert hash(data) == hash(a)
   assert s.getPosition == s.data.len
 block:
   let data = {Apple, Orange}
@@ -111,6 +115,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a == data
+  assert hash(data) == hash(a)
   assert s.getPosition == s.data.len
 block:
   let data = "hello world"
@@ -122,6 +127,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a == data
+  assert hash(data) == hash(a)
   assert s.getPosition == s.data.len
 block:
   let data = @[1, 2, 3, 4, 5, 6]
@@ -133,6 +139,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a == data
+  assert hash(data) == hash(a)
   assert s.getPosition == s.data.len
 block:
   let data = @["αβγ", "δεζη", "θικλμ"]
@@ -144,6 +151,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a == data
+  assert hash(data) == hash(a)
   assert s.getPosition == s.data.len
 block:
   let data = @[("3",), ("4",), ("5",)]
@@ -152,6 +160,7 @@ block:
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a == data
+  assert hash(data) == hash(a)
   assert s.getPosition == s.data.len
 block:
   let data = FooBaz(v: "hello", t: 5.0, x: (3'i32,))
