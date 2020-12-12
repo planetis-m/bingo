@@ -28,6 +28,7 @@ proc toSha1(s: Stream): Sha1Digest =
     let length = readData(s, cstring(buffer), BufferLength)
     if length == 0:
       break
+    buffer.setLen(length)
     state.update(buffer)
     if length != BufferLength:
       break
