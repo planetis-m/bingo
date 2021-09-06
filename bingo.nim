@@ -1,26 +1,28 @@
 import macros, streams, options, tables, sets
 from typetraits import supportsCopyMem
 
-proc hasCustomSerializer*[T: SomeNumber](t: typedesc[T]): bool = hasCustomSerializer(T)
-proc hasCustomSerializer*[T: enum](t: typedesc[T]): bool = hasCustomSerializer(T)
+proc hasCustomSerializer*(t: typedesc[bool]): bool = false
+proc hasCustomSerializer*(t: typedesc[char]): bool = false
+proc hasCustomSerializer*[T: SomeNumber](t: typedesc[T]): bool = false
+proc hasCustomSerializer*[T: enum](t: typedesc[T]): bool = false
 proc hasCustomSerializer*[T](t: typedesc[set[T]]): bool = hasCustomSerializer(T)
+proc hasCustomSerializer*(t: typedesc[string]): bool = true
 proc hasCustomSerializer*[S, T](t: typedesc[array[S, T]]): bool = hasCustomSerializer(T)
 proc hasCustomSerializer*[T](t: typedesc[seq[T]]): bool = hasCustomSerializer(T)
 proc hasCustomSerializer*[T](t: typedesc[SomeSet[T]]): bool = hasCustomSerializer(T)
-proc hasCustomSerializer*[K, V](t: typedesc[(Table[K, V]|OrderedTable[K, V])]): bool =
-  hasCustomSerializer(K) or hasCustomSerializer(V)
+proc hasCustomSerializer*[K, V](t: typedesc[(Table[K, V]|OrderedTable[K, V])]): bool = true
 proc hasCustomSerializer*[T](t: typedesc[ref T]): bool = hasCustomSerializer(T)
 proc hasCustomSerializer*[T](t: typedesc[Option[T]]): bool = hasCustomSerializer(T)
 proc hasCustomSerializer*[T: tuple](t: typedesc[T]): bool =
   result = false
   var o: T
   for v in o.fields:
-    result = result or hasCustomSerializer(typeof(v))
+    if hasCustomSerializer(typeof(v)): return true
 proc hasCustomSerializer*[T: object](t: typedesc[T]): bool =
   result = false
   var o: T
   for v in o.fields:
-    result = result or hasCustomSerializer(typeof(v))
+    if hasCustomSerializer(typeof(v)): return true
 
 # serialization
 proc storeBin*(s: Stream; x: bool) =
