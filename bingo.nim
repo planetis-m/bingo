@@ -1,6 +1,27 @@
 import macros, streams, options, tables, sets
 from typetraits import supportsCopyMem
 
+proc hasCustomSerializer*[T: SomeNumber](t: typedesc[T]): bool = hasCustomSerializer(T)
+proc hasCustomSerializer*[T: enum](t: typedesc[T]): bool = hasCustomSerializer(T)
+proc hasCustomSerializer*[T](t: typedesc[set[T]]): bool = hasCustomSerializer(T)
+proc hasCustomSerializer*[S, T](t: typedesc[array[S, T]]): bool = hasCustomSerializer(T)
+proc hasCustomSerializer*[T](t: typedesc[seq[T]]): bool = hasCustomSerializer(T)
+proc hasCustomSerializer*[T](t: typedesc[SomeSet[T]]): bool = hasCustomSerializer(T)
+proc hasCustomSerializer*[K, V](t: typedesc[(Table[K, V]|OrderedTable[K, V])]): bool =
+  hasCustomSerializer(K) or hasCustomSerializer(V)
+proc hasCustomSerializer*[T](t: typedesc[ref T]): bool = hasCustomSerializer(T)
+proc hasCustomSerializer*[T](t: typedesc[Option[T]]): bool = hasCustomSerializer(T)
+proc hasCustomSerializer*[T: tuple](t: typedesc[T]): bool =
+  result = false
+  var o: T
+  for v in o.fields:
+    result = result or hasCustomSerializer(typeof(v))
+proc hasCustomSerializer*[T: object](t: typedesc[T]): bool =
+  result = false
+  var o: T
+  for v in o.fields:
+    result = result or hasCustomSerializer(typeof(v))
+
 # serialization
 proc storeBin*(s: Stream; x: bool) =
   write(s, x)
@@ -17,7 +38,7 @@ proc storeBin*(s: Stream; x: string) =
   writeData(s, cstring(x), x.len)
 
 proc storeBin*[S, T](s: Stream; x: array[S, T]) =
-  when supportsCopyMem(T):
+  when not hasCustomSerializer(T) and supportsCopyMem(T):
     writeData(s, x.unsafeAddr, sizeof(x))
   else:
     for elem in x.items:
@@ -25,7 +46,7 @@ proc storeBin*[S, T](s: Stream; x: array[S, T]) =
 
 proc storeBin*[T](s: Stream; x: seq[T]) =
   write(s, int64(x.len))
-  when supportsCopyMem(T):
+  when not hasCustomSerializer(T) and supportsCopyMem(T):
     if x.len > 0:
       writeData(s, x[0].unsafeAddr, x.len * sizeof(T))
   else:
@@ -56,14 +77,14 @@ proc storeBin*[T](s: Stream; o: Option[T]) =
     storeBin(s, get(o))
 
 proc storeBin*[T: tuple](s: Stream; o: T) =
-  when supportsCopyMem(T):
+  when not hasCustomSerializer(T) and supportsCopyMem(T):
     write(s, o)
   else:
     for v in o.fields:
       storeBin(s, v)
 
 proc storeBin*[T: object](s: Stream; o: T) =
-  when supportsCopyMem(T):
+  when not hasCustomSerializer(T) and supportsCopyMem(T):
     write(s, o)
   else:
     for v in o.fields:
@@ -90,7 +111,7 @@ proc initFromBin*(dst: var string; s: Stream) =
 proc initFromBin*[T](dst: var seq[T]; s: Stream) =
   let len = s.readInt64().int
   dst.setLen(len)
-  when supportsCopyMem(T):
+  when not hasCustomSerializer(T) and supportsCopyMem(T):
     if len > 0:
       let bLen = len * sizeof(T)
       if readData(s, dst[0].addr, bLen) != bLen:
@@ -100,7 +121,7 @@ proc initFromBin*[T](dst: var seq[T]; s: Stream) =
       initFromBin(dst[i], s)
 
 proc initFromBin*[S, T](dst: var array[S, T]; s: Stream) =
-  when supportsCopyMem(T):
+  when not hasCustomSerializer(T) and supportsCopyMem(T):
     if readData(s, dst.addr, sizeof(dst)) != sizeof(dst):
       raise newException(IOError, "cannot read from stream")
   else:
@@ -139,7 +160,7 @@ proc initFromBin*[T](dst: var Option[T]; s: Stream) =
     dst = none[T]()
 
 proc initFromBin*[T: tuple](dst: var T; s: Stream) =
-  when supportsCopyMem(T):
+  when not hasCustomSerializer(T) and supportsCopyMem(T):
     read(s, dst)
   else:
     for v in dst.fields:
@@ -210,7 +231,7 @@ macro assignObjectImpl(dst: typed; s: Stream): untyped =
   if x.kind != nnkNone: result.add x
 
 proc initFromBin*[T: object](dst: var T; s: Stream) =
-  when supportsCopyMem(T):
+  when not hasCustomSerializer(T) and supportsCopyMem(T):
     read(s, dst)
   else:
     assignObjectImpl(dst, s)
