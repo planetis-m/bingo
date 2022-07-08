@@ -37,9 +37,12 @@ proc byteSize*[S, T](x: array[S, T]): int =
     for elem in x.items:
       result.inc byteSize(elem)
 proc byteSize*[T](x: seq[T]): int =
-  result = sizeof(int64)
-  for elem in x.items:
-    result.inc byteSize(elem)
+  when not hasCustomSerializer(T) and supportsCopyMem(T):
+    result = sizeof(int64) + x.len * sizeof(T)
+  else:
+    result = sizeof(int64)
+    for elem in x.items:
+      result.inc byteSize(elem)
 proc byteSize*[T](o: SomeSet[T]): int =
   result = sizeof(int64)
   for elem in o.items:
