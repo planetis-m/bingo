@@ -24,6 +24,52 @@ proc hasCustomSerializer*[T: object](t: typedesc[T]): bool =
   for v in o.fields:
     if hasCustomSerializer(typeof(v)): return true
 
+proc byteSize*(x: bool): int = sizeof(x)
+proc byteSize*(x: char): int = sizeof(x)
+proc byteSize*[T: SomeNumber](x: T): int = sizeof(x)
+proc byteSize*[T: enum](x: T): int = sizeof(x)
+proc byteSize*[T](x: set[T]): int = sizeof(x)
+proc byteSize*(x: string): int = sizeof(int64) + x.len
+proc byteSize*[S, T](x: array[S, T]): int =
+  when not hasCustomSerializer(T) and supportsCopyMem(T):
+    result = sizeof(x)
+  else:
+    for elem in x.items:
+      result.inc byteSize(elem)
+proc byteSize*[T](x: seq[T]): int =
+  result = sizeof(int64)
+  for elem in x.items:
+    result.inc byteSize(elem)
+proc byteSize*[T](o: SomeSet[T]): int =
+  result = sizeof(int64)
+  for elem in o.items:
+    result.inc byteSize(elem)
+proc byteSize*[K, V](o: (Table[K, V]|OrderedTable[K, V])): int =
+  result = sizeof(int64)
+  for k, v in o.pairs:
+    result.inc byteSize(k)
+    result.inc byteSize(v)
+proc byteSize*[T](o: ref T): int =
+  result = sizeof(bool)
+  if o != nil:
+    result.inc byteSize(o[])
+proc byteSize*[T](o: Option[T]): int =
+  result = sizeof(bool)
+  if isSome(o):
+    result.inc byteSize(get(o))
+proc byteSize*[T: tuple](o: T): int =
+  when not hasCustomSerializer(T) and supportsCopyMem(T):
+    result = sizeof(o)
+  else:
+    result = 0
+    for v in o.fields: result.inc byteSize(v)
+proc byteSize*[T: object](o: T): int =
+  when not hasCustomSerializer(T) and supportsCopyMem(T):
+    result = sizeof(o)
+  else:
+    result = 0
+    for v in o.fields: result.inc byteSize(v)
+
 # serialization
 proc storeBin*(s: Stream; x: bool) =
   write(s, x)

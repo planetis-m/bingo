@@ -1,5 +1,12 @@
 import ../bingo, fusion/smartptrs, std/streams
 
+proc hasCustomSerializer*[T](t: typedesc[(UniquePtr[T]|SharedPtr[T]|ConstPtr[T])]): bool = true
+
+proc byteSize*[T](o: (UniquePtr[T]|SharedPtr[T]|ConstPtr[T])): int =
+  result = sizeof(bool)
+  if not o.isNil:
+    result.inc byteSize(o[])
+
 proc storeBin*[T](s: Stream; o: UniquePtr[T]) =
   let isSome = not o.isNil
   storeBin(s, isSome)
@@ -30,5 +37,5 @@ proc initFromBin*[T](dst: var SharedPtr[T]; s: Stream) =
   else:
     reset(dst)
 
-proc storeBin*[T](s: Stream; o: ConstPtr[T]) = storeBin(s, SharedPtr[T](o))
-proc initFromBin*[T](dst: var ConstPtr[T]; s: Stream) = initFromBin(SharedPtr[T](dst), s)
+proc storeBin*[T](s: Stream; o: ConstPtr[T]) {.inline.} = storeBin(s, SharedPtr[T](o))
+proc initFromBin*[T](dst: var ConstPtr[T]; s: Stream) {.inline.} = initFromBin(SharedPtr[T](dst), s)

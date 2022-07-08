@@ -62,7 +62,7 @@ block:
   let data = [0, 1, 2, 3, 4, 5, 6]
   let s = newStringStream()
   s.storeBin(data)
-  assert s.data.len == sizeof(data)
+  assert s.data.len == byteSize(data)
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a == data
@@ -71,7 +71,7 @@ block:
   let data = NotApple
   let s = newStringStream()
   s.storeBin(data)
-  assert s.data.len == sizeof(data)
+  assert s.data.len == byteSize(data)
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a == data
@@ -80,7 +80,7 @@ block:
   let data: array[Fruit, int] = [0, 1, 2]
   let s = newStringStream()
   s.storeBin(data)
-  assert s.data.len == sizeof(data)
+  assert s.data.len == byteSize(data)
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a == data
@@ -89,7 +89,7 @@ block:
   let data = Empty()
   let s = newStringStream()
   s.storeBin(data)
-  assert s.data.len == sizeof(data)
+  assert s.data.len == byteSize(data)
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a == data
@@ -98,7 +98,7 @@ block:
   let data = (x: 42)
   let s = newStringStream()
   s.storeBin(data)
-  assert s.data.len == sizeof(data)
+  assert s.data.len == byteSize(data)
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a == data
@@ -107,7 +107,7 @@ block:
   let data = {Apple, Orange}
   let s = newStringStream()
   s.storeBin(data)
-  assert s.data.len == sizeof(data)
+  assert s.data.len == byteSize(data)
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a == data
@@ -116,7 +116,7 @@ block:
   let data = "hello world"
   let s = newStringStream()
   s.storeBin(data)
-  assert s.data.len == sizeof(int)+len(data)
+  assert s.data.len == byteSize(data)
   s.setPosition(0)
   assert data.len == s.readInt64
   s.setPosition(0)
@@ -127,7 +127,7 @@ block:
   let data = @[1, 2, 3, 4, 5, 6]
   let s = newStringStream()
   s.storeBin(data)
-  assert s.data.len == sizeof(int)+data.len*sizeof(int)
+  assert s.data.len == byteSize(data)
   s.setPosition(0)
   assert data.len == s.readInt64
   s.setPosition(0)
@@ -157,7 +157,7 @@ block:
   let data = FooBaz(v: "hello", t: 5.0, x: (3'i32,))
   let s = newStringStream()
   s.storeBin(data)
-  assert s.data.len == sizeof(float)+sizeof(int)+len(data.v)+sizeof((int32,))
+  assert s.data.len == byteSize(data)
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a == data
@@ -166,7 +166,7 @@ block:
   let data = Foo(value: 1, next: Foo(value: 2, next: nil))
   let s = newStringStream()
   s.storeBin(data)
-  assert s.data.len == 3*sizeof(bool)+2*sizeof(int)
+  assert s.data.len == byteSize(data)
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a.value == 1
@@ -177,7 +177,7 @@ block:
   let data = FooBar(four: "hello", three: 1'f32)
   let s = newStringStream()
   s.storeBin(data)
-  assert s.data.len == sizeof(bool)+sizeof(float32)+sizeof(char)+2*sizeof(int)+len(data.four)
+  assert s.data.len == byteSize(data)
   s.setPosition(0)
   let a = s.binTo(typeof data)
   doAssert a.four == "hello"
@@ -188,7 +188,7 @@ block:
   let data = some(Foo(value: 5, next: nil))
   let s = newStringStream()
   s.storeBin(data)
-  assert s.data.len == 3*sizeof(bool)+sizeof(int)
+  assert s.data.len == byteSize(data)
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a.get.value == 5
@@ -197,7 +197,7 @@ block:
   let data = some(Empty())
   let s = newStringStream()
   s.storeBin(data)
-  assert s.data.len == sizeof(bool)+sizeof(Empty)
+  assert s.data.len == byteSize(data)
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert s.getPosition == s.data.len
@@ -205,7 +205,7 @@ block:
   let data = toHashSet([5'f32, 3, 2])
   let s = newStringStream()
   s.storeBin(data)
-  assert s.data.len == sizeof(int)+3*sizeof(float32)
+  assert s.data.len == byteSize(data)
   s.setPosition(0)
   assert data.len == s.readInt64
   s.setPosition(0)
@@ -216,7 +216,7 @@ block:
   let data = {'a': 5'i32, 'b': 9'i32}.toTable
   let s = newStringStream()
   s.storeBin(data)
-  assert s.data.len == sizeof(int)+2+2*sizeof(int32)
+  assert s.data.len == byteSize(data)
   s.setPosition(0)
   assert data.len == s.readInt64
   s.setPosition(0)
@@ -227,7 +227,7 @@ block:
   let data = Bar(kind: Apple, apple: "world")
   let s = newStringStream()
   s.storeBin(data)
-  assert s.data.len == sizeof(bool)+sizeof(Fruit)+sizeof(int)+len(data.apple)
+  assert s.data.len == byteSize(data)
   s.setPosition(0)
   let a = s.binTo(typeof data)
   assert a.kind == Apple
