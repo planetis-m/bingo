@@ -34,19 +34,16 @@ proc byteSize*[S, T](x: array[S, T]): int =
   when not hasCustomSerializer(T) and supportsCopyMem(T):
     result = sizeof(x)
   else:
-    for elem in x.items:
-      result.inc byteSize(elem)
+    for elem in x.items: result.inc byteSize(elem)
 proc byteSize*[T](x: seq[T]): int =
   when not hasCustomSerializer(T) and supportsCopyMem(T):
     result = sizeof(int64) + x.len * sizeof(T)
   else:
     result = sizeof(int64)
-    for elem in x.items:
-      result.inc byteSize(elem)
+    for elem in x.items: result.inc byteSize(elem)
 proc byteSize*[T](o: SomeSet[T]): int =
   result = sizeof(int64)
-  for elem in o.items:
-    result.inc byteSize(elem)
+  for elem in o.items: result.inc byteSize(elem)
 proc byteSize*[K, V](o: (Table[K, V]|OrderedTable[K, V])): int =
   result = sizeof(int64)
   for k, v in o.pairs:
@@ -54,12 +51,10 @@ proc byteSize*[K, V](o: (Table[K, V]|OrderedTable[K, V])): int =
     result.inc byteSize(v)
 proc byteSize*[T](o: ref T): int =
   result = sizeof(bool)
-  if o != nil:
-    result.inc byteSize(o[])
+  if o != nil: result.inc byteSize(o[])
 proc byteSize*[T](o: Option[T]): int =
   result = sizeof(bool)
-  if isSome(o):
-    result.inc byteSize(get(o))
+  if isSome(o): result.inc byteSize(get(o))
 proc byteSize*[T: tuple](o: T): int =
   when not hasCustomSerializer(T) and supportsCopyMem(T):
     result = sizeof(o)
