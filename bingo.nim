@@ -16,12 +16,12 @@ proc hasCustomSerializer*[T](t: typedesc[Option[T]]): bool = true
 proc hasCustomSerializer*[T: tuple](t: typedesc[T]): bool =
   result = false
   var o: T
-  for v in o.fields:
+  for v in fields(o):
     if hasCustomSerializer(typeof(v)): return true
 proc hasCustomSerializer*[T: object](t: typedesc[T]): bool =
   result = false
   var o: T
-  for v in o.fields:
+  for v in fields(o):
     if hasCustomSerializer(typeof(v)): return true
 
 proc byteSize*(x: bool): int = sizeof(x)
@@ -34,19 +34,19 @@ proc byteSize*[S, T](x: array[S, T]): int =
   when not hasCustomSerializer(T) and supportsCopyMem(T):
     result = sizeof(x)
   else:
-    for elem in x.items: result.inc byteSize(elem)
+    for elem in items(x): result.inc byteSize(elem)
 proc byteSize*[T](x: seq[T]): int =
   when not hasCustomSerializer(T) and supportsCopyMem(T):
     result = sizeof(int64) + x.len * sizeof(T)
   else:
     result = sizeof(int64)
-    for elem in x.items: result.inc byteSize(elem)
+    for elem in items(x): result.inc byteSize(elem)
 proc byteSize*[T](o: SomeSet[T]): int =
   result = sizeof(int64)
-  for elem in o.items: result.inc byteSize(elem)
+  for elem in items(o): result.inc byteSize(elem)
 proc byteSize*[K, V](o: (Table[K, V]|OrderedTable[K, V])): int =
   result = sizeof(int64)
-  for k, v in o.pairs:
+  for k, v in pairs(o):
     result.inc byteSize(k)
     result.inc byteSize(v)
 proc byteSize*[T](o: ref T): int =
@@ -60,13 +60,13 @@ proc byteSize*[T: tuple](o: T): int =
     result = sizeof(o)
   else:
     result = 0
-    for v in o.fields: result.inc byteSize(v)
+    for v in fields(o): result.inc byteSize(v)
 proc byteSize*[T: object](o: T): int =
   when not hasCustomSerializer(T) and supportsCopyMem(T):
     result = sizeof(o)
   else:
     result = 0
-    for v in o.fields: result.inc byteSize(v)
+    for v in fields(o): result.inc byteSize(v)
 
 # serialization
 proc storeBin*(s: Stream; x: bool) =
@@ -87,7 +87,7 @@ proc storeBin*[S, T](s: Stream; x: array[S, T]) =
   when not hasCustomSerializer(T) and supportsCopyMem(T):
     writeData(s, x.unsafeAddr, sizeof(x))
   else:
-    for elem in x.items:
+    for elem in items(x):
       storeBin(s, elem)
 
 proc storeBin*[T](s: Stream; x: seq[T]) =
@@ -96,17 +96,17 @@ proc storeBin*[T](s: Stream; x: seq[T]) =
     if x.len > 0:
       writeData(s, x[0].unsafeAddr, x.len * sizeof(T))
   else:
-    for elem in x.items:
+    for elem in items(x):
       storeBin(s, elem)
 
 proc storeBin*[T](s: Stream; o: SomeSet[T]) =
   write(s, int64(o.len))
-  for elem in o.items:
+  for elem in items(o):
     storeBin(s, elem)
 
 proc storeBin*[K, V](s: Stream; o: (Table[K, V]|OrderedTable[K, V])) =
   write(s, int64(o.len))
-  for k, v in o.pairs:
+  for k, v in pairs(o):
     storeBin(s, k)
     storeBin(s, v)
 
@@ -126,14 +126,14 @@ proc storeBin*[T: tuple](s: Stream; o: T) =
   when not hasCustomSerializer(T) and supportsCopyMem(T):
     write(s, o)
   else:
-    for v in o.fields:
+    for v in fields(o):
       storeBin(s, v)
 
 proc storeBin*[T: object](s: Stream; o: T) =
   when not hasCustomSerializer(T) and supportsCopyMem(T):
     write(s, o)
   else:
-    for v in o.fields:
+    for v in fields(o):
       storeBin(s, v)
 
 # deserialization
@@ -209,7 +209,7 @@ proc initFromBin*[T: tuple](dst: var T; s: Stream) =
   when not hasCustomSerializer(T) and supportsCopyMem(T):
     read(s, dst)
   else:
-    for v in dst.fields:
+    for v in fields(dst):
       initFromBin(v, s)
 
 template getFieldValue(stream, tmpSym, fieldSym) =
